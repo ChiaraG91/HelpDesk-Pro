@@ -1,5 +1,5 @@
-from .workflows import TICKET_WORKFLOW
-from .permissions import can_change_status, can_assign_ticket, can_reopen_ticket
+from backend.apps.tickets.workflows import TICKET_WORKFLOW
+from backend.apps.tickets.permissions import can_change_status, can_assign_ticket, can_reopen_ticket
 
 def change_ticket_status(ticket, user, new_status):
 
