@@ -17,3 +17,4 @@ db.sqlite3
 # Cartelle media e statiche (che si generano dopo)
 static/
 media/
+venv/
