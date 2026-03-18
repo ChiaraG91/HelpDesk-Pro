@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from backend.apps.categories.models import Category
+from .models import Category
 
 
 class CategorySerializer(serializers.ModelSerializer):

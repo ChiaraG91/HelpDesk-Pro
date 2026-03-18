@@ -1,10 +1,9 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from backend.apps.comments.views import TicketCommentListCreateView
-from backend.apps.tickets.views import TicketViewSet
+from .views import TicketCommentListCreateView
 
 router = DefaultRouter()
-router.register("tickets", TicketViewSet)
+router.register(r'ticket-comments', TicketCommentListCreateView, basename='ticket-comment')
 
 urlpatterns = [
     path("", include(router.urls)),

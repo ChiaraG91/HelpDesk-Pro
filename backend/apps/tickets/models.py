@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from backend.apps.users.models import CustomUser
-from backend.apps.categories.models import Category
+from apps.users.models import CustomUser
+from apps.categories.models import Category
 
 class Ticket(models.Model):
     class StatusChoice(models.TextChoices):

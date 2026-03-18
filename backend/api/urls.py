@@ -2,10 +2,10 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 # import views
-from backend.apps.tickets.views import TicketViewSet
-from backend.apps.comments.views import TicketCommentListCreateView
-from backend.apps.categories.views import CategoryListView
-from backend.apps.users.views import RegisterView, me, UserViewSet
+from apps.tickets.views import TicketViewSet
+from apps.comments.views import TicketCommentListCreateView
+from apps.categories.views import CategoryListView
+from apps.users.views import RegisterView, me, UserViewSet
 
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,

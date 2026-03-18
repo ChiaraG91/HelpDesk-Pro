@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from backend.apps.tickets.models import Ticket
+from .models import Ticket
 
 
 class TicketSerializer(serializers.ModelSerializer):

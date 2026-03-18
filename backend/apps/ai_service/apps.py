@@ -1,5 +1,5 @@
 from django.apps import AppConfig
 
-
 class AiServiceConfig(AppConfig):
-    name = 'ai_service'
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'apps.ai_service'
