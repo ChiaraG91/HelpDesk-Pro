@@ -1,5 +1,6 @@
 from .workflows import TICKET_WORKFLOW
 from .permissions import can_change_status, can_assign_ticket, can_reopen_ticket
+from .models import StatusChoice, TicketHistory
 
 def change_ticket_status(ticket, user, new_status):
 
@@ -31,10 +32,10 @@ def reopen_ticket(ticket, user):
     if not can_reopen_ticket(user):
          raise Exception("Only admin and operator can reopen tickets")
 
-    if ticket.status not in ["resolved", "closed"]:
+    if ticket.status not in [StatusChoice.RESOLVED, StatusChoice.CLOSED]:
         raise Exception("Ticket cannot be reopened")
 
-    ticket.status = "in_progress"
+    ticket.status = StatusChoice.IN_PROGRESS
     ticket.save()
 
     return ticket
