@@ -1,5 +1,4 @@
 # backend/config/settings.py
-
 import os
 from pathlib import Path
 from datetime import timedelta
@@ -12,7 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ----------------------------
 # DEBUG & ALLOWED_HOSTS
 # ----------------------------
-DEBUG = True  # sviluppo
+DEBUG = True  # sviluppo locale
 ALLOWED_HOSTS = ["*"]  # sviluppo locale, NON usare in produzione
 
 # ----------------------------
@@ -36,6 +35,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "django_filters",
     "drf_yasg",
+    "corsheaders",  # ✅ CORS
 
     # App custom
     "apps.users.apps.UsersConfig",
@@ -49,9 +49,11 @@ INSTALLED_APPS = [
 # MIDDLEWARE
 # ----------------------------
 MIDDLEWARE = [
-    "django.middleware.security.SecurityMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",  # deve venire PRIMA di auth
+    "corsheaders.middleware.CorsMiddleware",  # ✅ CORS PRIMA di CommonMiddleware
     "django.middleware.common.CommonMiddleware",
+
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -69,7 +71,7 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],  # opzionale, se hai cartella templates
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -147,6 +149,21 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
+
+# ----------------------------
+# CORS CONFIGURATION
+# ----------------------------
+# Opzione sviluppo locale: React su localhost:3000
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+# Per sviluppo rapido, meno sicuro:
+# CORS_ALLOW_ALL_ORIGINS = True
+
+# Permette header Authorization con credenziali
+CORS_ALLOW_CREDENTIALS = True
 
 # ----------------------------
 # DEFAULT AUTO FIELD
