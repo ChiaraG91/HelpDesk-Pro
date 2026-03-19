@@ -1,9 +1,10 @@
-from .models import StatusChoice
+from .models import Ticket
 
 TICKET_WORKFLOW = {
-    StatusChoice.OPEN: [StatusChoice.IN_PROGRESS],
-    StatusChoice.IN_PROGRESS: [StatusChoice.WAITING_FEEDBACK, StatusChoice.RESOLVED],
-    StatusChoice.WAITING_FEEDBACK: [StatusChoice.IN_PROGRESS, StatusChoice.RESOLVED],
-    StatusChoice.RESOLVED: [StatusChoice.CLOSED],
-    StatusChoice.CLOSED: []
+    Ticket.StatusChoice.OPEN: [Ticket.StatusChoice.IN_PROGRESS],
+    Ticket.StatusChoice.IN_PROGRESS: [
+        Ticket.StatusChoice.RESOLVED,
+        Ticket.StatusChoice.OPEN
+    ],
+    Ticket.StatusChoice.RESOLVED: [Ticket.StatusChoice.CLOSED],
 }
