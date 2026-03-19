@@ -6,11 +6,12 @@ from rest_framework import status
 from .serializers import(
     TicketClassificationSerializer, 
     ReplyGenerationSerializer,
-    TicketSummarizerSerializer
+    DuplicateCheckSerializer
 )
 
 from .ticket_classifier import classify_ticket
 from .reply_generator import generate_reply
+from .duplicate_detector import check_duplicate
 
 @api_view(['POST'])
 def classify_ticket_view(request):
@@ -29,3 +30,20 @@ def generate_reply_view(request):
     data = serializer.validated_data
     risultato_ai = generate_reply( title = data['title'], description = data['description'], operator_notes = data.get('operator_notes', '')
     )
+
+@api_view(['POST'])
+def check_duplicate_view(request):
+    serializer = DuplicateCheckSerializer(data=request.data)
+    
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    data = serializer.validated_data
+    
+    risultato_ai = check_duplicate(
+        new_title=data['new_title'], 
+        new_description=data['new_description'], 
+        recent_tickets=data['recent_tickets']
+    )
+    
+    return Response(risultato_ai, status=status.HTTP_200_OK)
