@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-DAs1UGHr.js";import{n as t}from"./index-7sifQs-k.js";var n=e(),r=()=>{let{id:e}=t();return(0,n.jsxs)(`div`,{className:`p-6`,children:[(0,n.jsxs)(`h1`,{className:`text-2xl font-bold text-gray-800`,children:[`Ticket #`,e]}),(0,n.jsx)(`p`,{className:`text-gray-500 mt-2`,children:`Dettaglio ticket`})]})};export{r as default};
