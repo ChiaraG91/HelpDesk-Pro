@@ -7,3 +7,4 @@ drf-yasg
 python-dotenv
 openai
 google-genai
+Pillow
