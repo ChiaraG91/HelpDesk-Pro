@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "django_filters",
     "drf_yasg",
     "corsheaders",  # ✅ CORS
+    "drf_spectacular",
 
     # App custom
     "apps.users.apps.UsersConfig",
@@ -169,3 +170,17 @@ CORS_ALLOW_CREDENTIALS = True
 # DEFAULT AUTO FIELD
 # ----------------------------
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# ----------------------------
+# SWAGGER (DRF-YASG) CONFIG
+# ----------------------------
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization'
+        }
+    },
+    'USE_SESSION_AUTH': False,
+}

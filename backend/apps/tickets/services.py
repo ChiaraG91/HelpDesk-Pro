@@ -22,22 +22,34 @@ class TicketService:
         ticket.save()
 
        
-        TicketService.create_ticket_history(ticket, user, old_status, new_status)
+        TicketService.create_ticket_history(ticket, user, "status", str(old_status) if old_status else "None", str(new_status))
 
         return ticket
 
     @staticmethod
-    def assign_ticket(ticket, operator, user):
+    def assign_ticket(ticket, assigning_user, target_operator):
+        from .permissions import is_admin, is_operator
 
-        if not can_assign_ticket(user):
-            raise Exception("Only admin can assign tickets")
+        if is_operator(assigning_user):
+            if target_operator.id != assigning_user.id:
+                raise Exception("Un operatore può auto-assegnarsi solo i propri ticket")
+            if ticket.assigned_to is not None:
+                raise Exception("Questo ticket è già preso in carico")
+        elif not is_admin(assigning_user):
+            raise Exception("Solo l'amministratore può forzare l'assegnazione")
 
-        old_operator = ticket.assigned_operator
+        old_operator = ticket.assigned_to
 
-        ticket.assigned_operator = operator
+        ticket.assigned_to = target_operator
         ticket.save()
 
-        TicketService.create_ticket_history(ticket, user, old_operator, operator)
+        TicketService.create_ticket_history(
+            ticket, 
+            assigning_user, 
+            "assigned_to", 
+            str(old_operator.username) if old_operator else "None", 
+            str(target_operator.username) if target_operator else "None"
+        )
 
         return ticket
     
@@ -57,7 +69,7 @@ class TicketService:
         ticket.save()
 
         TicketService.create_ticket_history(
-            ticket, user, old_status, Ticket.StatusChoice.CLOSED
+            ticket, user, "status", str(old_status) if old_status else "None", str(Ticket.StatusChoice.CLOSED)
         )
 
         return ticket
@@ -77,7 +89,7 @@ class TicketService:
         ticket.save()
 
         TicketService.create_ticket_history(
-            ticket, user, old_status, Ticket.StatusChoice.IN_PROGRESS
+            ticket, user, "status", str(old_status) if old_status else "None", str(Ticket.StatusChoice.IN_PROGRESS)
         )
 
         return ticket
@@ -96,11 +108,12 @@ class TicketService:
         return comment
 
     @staticmethod
-    def create_ticket_history(ticket, user, old_value, new_value):
+    def create_ticket_history(ticket, user, field_changed, old_value, new_value):
 
         return TicketHistory.objects.create(
             ticket=ticket,
             changed_by=user,
+            field_changed=field_changed,
             old_value=old_value,
             new_value=new_value
         )

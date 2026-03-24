@@ -1,7 +1,7 @@
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-import apps.comments.models
-import apps.tickets.models
+from .models import Comment
+from apps.tickets.models import Ticket
 from .serializers import CommentSerializer
 
 

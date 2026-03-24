@@ -1,5 +1,5 @@
 def is_admin(user):
-    return user.role == "ADMIN"
+    return user.role == "ADMIN" or user.is_superuser
 
 
 def is_operator(user):
@@ -18,3 +18,9 @@ def can_assign_ticket(user):
 
 def can_reopen_ticket(user):
     return is_operator(user) or is_admin(user)
+
+from rest_framework.permissions import BasePermission
+
+class IsAdminRole(BasePermission):
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and is_admin(request.user))

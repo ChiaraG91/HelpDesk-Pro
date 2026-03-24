@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 # import views
 from apps.tickets.views import TicketViewSet
 from apps.comments.views import TicketCommentListCreateView
-from apps.categories.views import CategoryListView
+from apps.categories.views import CategoryViewSet
 from apps.users.views import RegisterView, me, UserViewSet
 
 from rest_framework_simplejwt.views import (
@@ -16,7 +16,7 @@ from rest_framework_simplejwt.views import (
 router = DefaultRouter()
 router.register("tickets", TicketViewSet, basename="ticket")
 router.register("users", UserViewSet, basename="user")
-
+router.register("categories", CategoryViewSet, basename="category")
 urlpatterns = [
 
     # 🔐 AUTH
@@ -33,11 +33,8 @@ urlpatterns = [
         TicketCommentListCreateView.as_view(),
     ),
 
-    # 🗂 categorie
-    path(
-        "categories/",
-        CategoryListView.as_view(),
-    ),
+    # 🤖 servizi ai
+    path("ai/", include("apps.ai_service.urls")),
 
     # 🚀 router automatico (tickets + users)
     path("", include(router.urls)),

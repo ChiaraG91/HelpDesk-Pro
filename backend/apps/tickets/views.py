@@ -10,6 +10,7 @@ from .models import Ticket
 from .serializers import TicketSerializer
 from .filters import TicketFilter
 from .services import TicketService
+from .permissions import is_admin, is_operator
 
 
 class TicketViewSet(viewsets.ModelViewSet):
@@ -25,7 +26,7 @@ class TicketViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
-        if user.is_staff:
+        if is_admin(user) or is_operator(user):
             return Ticket.objects.all()
 
         return Ticket.objects.filter(created_by=user)
@@ -33,8 +34,9 @@ class TicketViewSet(viewsets.ModelViewSet):
     # 🔒 FIX 2: protezione accesso diretto per ID
     def get_object(self):
         obj = super().get_object()
+        user = self.request.user
 
-        if not self.request.user.is_staff and obj.created_by != self.request.user:
+        if not (is_admin(user) or is_operator(user)) and obj.created_by != user:
             raise PermissionDenied("Non puoi accedere a questo ticket")
 
         return obj
@@ -45,7 +47,7 @@ class TicketViewSet(viewsets.ModelViewSet):
 
     # 🔒 FIX 3: blocco DELETE per utenti normali
     def destroy(self, request, *args, **kwargs):
-        if not request.user.is_staff:
+        if not is_admin(request.user):
             return Response(
                 {"error": "Non autorizzato a cancellare ticket"},
                 status=status.HTTP_403_FORBIDDEN
@@ -67,13 +69,45 @@ class TicketViewSet(viewsets.ModelViewSet):
         return Response({"status": "closed"})
 
     @action(detail=True, methods=["post"])
+    def change_status(self, request, pk=None):
+        ticket = self.get_object()
+        new_status = request.data.get("status")
+
+        try:
+            TicketService.change_ticket_status(ticket, request.user, new_status)
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
+
+        return Response({"status": new_status})
+
+    @action(detail=True, methods=["post"])
+    def reopen(self, request, pk=None):
+        ticket = self.get_object()
+
+        try:
+            TicketService.reopen_ticket(ticket, request.user)
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
+
+        return Response({"status": "in_progress"})
+
+    @action(detail=True, methods=["post"])
     def assign(self, request, pk=None):
         ticket = self.get_object()
         user_id = request.data.get("user_id")
 
+        if user_id is None:
+            # Se user_id non è fornito, è un'auto-assegnazione dell'operatore che sta facendo la chiamata
+            target_operator = request.user
+        else:
+            from django.contrib.auth import get_user_model
+            from django.shortcuts import get_object_or_404
+            User = get_user_model()
+            target_operator = get_object_or_404(User, id=user_id)
+
         try:
-            TicketService.assign_ticket(ticket, request.user, user_id)
+            TicketService.assign_ticket(ticket, request.user, target_operator)
         except Exception as e:
-            return Response({"error": str(e)}, status=400)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({"status": "assigned"})
