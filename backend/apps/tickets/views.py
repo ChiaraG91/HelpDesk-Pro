@@ -7,10 +7,11 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 
 from .models import Ticket
-from .serializers import TicketSerializer
+from .serializers import TicketSerializer, AssignTicketSerializer
 from .filters import TicketFilter
 from .services import TicketService
 from .permissions import is_admin, is_operator
+from drf_yasg.utils import swagger_auto_schema
 
 
 class TicketViewSet(viewsets.ModelViewSet):
@@ -42,6 +43,11 @@ class TicketViewSet(viewsets.ModelViewSet):
         return obj
 
     # ✅ create ok
+    def create(self, request, *args, **kwargs):
+        if is_operator(request.user):
+            raise PermissionDenied("Gli operatori non possono creare ticket. Questa azione è riservata ai clienti e agli amministratori.")
+        return super().create(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
@@ -91,13 +97,14 @@ class TicketViewSet(viewsets.ModelViewSet):
 
         return Response({"status": "in_progress"})
 
+    @swagger_auto_schema(method='post', request_body=AssignTicketSerializer)
     @action(detail=True, methods=["post"])
     def assign(self, request, pk=None):
         ticket = self.get_object()
         user_id = request.data.get("user_id")
 
-        if user_id is None:
-            # Se user_id non è fornito, è un'auto-assegnazione dell'operatore che sta facendo la chiamata
+        if not user_id:
+            # Se user_id non è fornito (o è vuoto), è un'auto-assegnazione dell'operatore che sta facendo la chiamata
             target_operator = request.user
         else:
             from django.contrib.auth import get_user_model
