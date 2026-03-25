@@ -1,18 +1,29 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { mockAiReplies, mockAiClassify, mockAiSummary } from '@/data/mockData'
-import { PriorityBadge } from '@/components/common'
+import { StatusBadge, PriorityBadge } from '@/components/common'
 import { formatDateTime, formatRelative } from '@/utils/formatDate'
 import { useToast } from '@/context/ToastContext'
 import { useTickets } from '@/context/TicketContext'
 import type { Ticket, Comment, TicketStatus } from '@/types'
 
+const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+  <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+    {children}
+  </h2>
+)
+
 const AiResultBox = ({ title, content, onClose }: { title: string; content: string; onClose: () => void }) => (
-  <div className="mt-3 bg-[#1a2e42] border border-[#7ccad5]/25 rounded-xl p-4">
-    <div className="flex items-center justify-between mb-2">
-      <span className="text-xs font-semibold text-[#7ccad5] uppercase tracking-wide">{title}</span>
-      <button onClick={onClose} className="text-slate-500 hover:text-slate-300 transition-colors">
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+  <div className="mt-3 bg-[#0b1622] border border-[#7ccad5]/20 rounded-xl p-4 animate-scale-in">
+    <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center gap-2">
+        <span className="w-1.5 h-1.5 rounded-full bg-[#7ccad5] animate-pulse" />
+        <span className="text-xs font-semibold text-[#7ccad5] tracking-wide">{title}</span>
+      </div>
+      <button onClick={onClose} className="text-slate-600 hover:text-slate-400 transition-colors p-0.5 rounded hover:bg-[#1a2e42]">
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
       </button>
     </div>
     <p className="text-sm text-slate-300 whitespace-pre-line leading-relaxed">{content}</p>
@@ -45,7 +56,7 @@ const TicketDetailPage = () => {
     if (!ticket) return
     setTicket({ ...ticket, status: newStatus })
     updateStatus(ticket.id, newStatus)
-    toast.success(`Stato aggiornato: ${newStatus}`)
+    toast.success('Stato aggiornato')
   }
 
   const handleAddComment = async () => {
@@ -72,11 +83,10 @@ const TicketDetailPage = () => {
     setAiResult(null)
     await new Promise((r) => setTimeout(r, 1200))
     if (type === 'reply') {
-      const text = mockAiReplies[ticket.category] ?? mockAiReplies['general']
-      setAiResult({ type: 'Risposta Suggerita', content: text })
+      setAiResult({ type: 'Risposta Suggerita', content: mockAiReplies[ticket.category] ?? mockAiReplies['general'] })
     } else if (type === 'classify') {
       const { category, priority } = mockAiClassify(ticket.title)
-      setAiResult({ type: 'Classificazione AI', content: `Categoria suggerita: ${category}\nPriorità suggerita: ${priority}\nAffidabilità: 87%` })
+      setAiResult({ type: 'Classificazione AI', content: `Categoria: ${category}\nPriorità: ${priority}\nAffidabilità: 87%` })
     } else {
       setAiResult({ type: 'Riassunto', content: mockAiSummary(ticket) })
     }
@@ -84,8 +94,11 @@ const TicketDetailPage = () => {
   }
 
   if (!ticket) return (
-    <div className="flex items-center justify-center py-20 text-slate-500">
-      <p>Ticket non trovato.</p>
+    <div className="flex flex-col items-center justify-center py-24 text-slate-600 gap-3">
+      <svg className="w-12 h-12 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2" />
+      </svg>
+      <p className="text-sm">Ticket non trovato</p>
     </div>
   )
 
@@ -93,133 +106,230 @@ const TicketDetailPage = () => {
   const statusLabels: Record<TicketStatus, string> = { open: 'Aperto', in_progress: 'In Lavorazione', resolved: 'Risolto', closed: 'Chiuso' }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
-        <button onClick={() => navigate('/tickets')} className="text-slate-400 hover:text-slate-200 transition-colors">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+    <div className="max-w-5xl mx-auto animate-fade-in">
+      {/* Header */}
+      <div className="flex items-start gap-3 mb-6">
+        <button
+          onClick={() => navigate('/tickets')}
+          className="mt-0.5 p-1.5 rounded-lg text-slate-600 hover:text-slate-300 hover:bg-[#1a2e42] transition-colors shrink-0"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
         </button>
-        <h1 className="text-xl font-bold text-white flex-1 truncate">{ticket.title}</h1>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs text-slate-600 font-mono">#{ticket.id}</span>
+            <StatusBadge status={ticket.status} />
+          </div>
+          <h1 className="text-xl font-bold text-white leading-snug">{ticket.title}</h1>
+        </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-3 gap-5">
+
+        {/* Colonna principale */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="bg-[#111f30] border border-[#2d4060] rounded-xl p-5">
-            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-3">Descrizione</h2>
+
+          {/* Descrizione */}
+          <div className="bg-[#0f1e2f] border border-[#1e3348] rounded-2xl p-5">
+            <SectionTitle>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h8" />
+              </svg>
+              Descrizione
+            </SectionTitle>
             <p className="text-slate-300 text-sm leading-relaxed">{ticket.description}</p>
           </div>
 
-          <div className="bg-[#111f30] border border-[#2d4060] rounded-xl">
-            <div className="px-5 py-4 border-b border-[#2d4060]">
-              <h2 className="text-sm font-semibold text-white">Commenti ({comments.length})</h2>
+          {/* Commenti */}
+          <div className="bg-[#0f1e2f] border border-[#1e3348] rounded-2xl overflow-hidden">
+            <div className="flex items-center gap-2 px-5 py-4 border-b border-[#1e3348]">
+              <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              <h2 className="text-sm font-semibold text-white">Commenti</h2>
+              <span className="ml-auto text-xs text-slate-600 font-medium">{comments.length}</span>
             </div>
+
             <div className="p-5 space-y-4">
-              {comments.length === 0 && <p className="text-sm text-slate-500 text-center py-4">Nessun commento ancora.</p>}
+              {comments.length === 0 && (
+                <div className="text-center py-6 text-slate-600 text-sm">Nessun commento ancora.</div>
+              )}
               {comments.map((c) => (
                 <div key={c.id} className="flex gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[#e7c6ff]/15 border border-[#e7c6ff]/20 flex items-center justify-center text-[#e7c6ff] text-xs font-bold shrink-0">
+                  <div className="w-7 h-7 rounded-full bg-[#e7c6ff]/12 border border-[#e7c6ff]/15 flex items-center justify-center text-[#e7c6ff] text-xs font-bold shrink-0 mt-0.5">
                     {c.author.name.charAt(0)}
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-medium text-slate-200">{c.author.name}</span>
-                      {c.isInternal && <span className="text-xs bg-yellow-500/15 text-yellow-400 px-1.5 py-0.5 rounded border border-yellow-500/20">Interno</span>}
-                      <span className="text-xs text-slate-500">{formatRelative(c.createdAt)}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                      <span className="text-xs font-semibold text-slate-300">{c.author.name}</span>
+                      {c.isInternal && (
+                        <span className="text-[10px] bg-amber-500/12 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/20 font-medium">Interno</span>
+                      )}
+                      <span className="text-[10px] text-slate-600 ml-auto">{formatRelative(c.createdAt)}</span>
                     </div>
-                    <p className="text-sm text-slate-300 bg-[#1a2e42] rounded-lg px-3 py-2 leading-relaxed">{c.content}</p>
+                    <div className={`rounded-xl px-3 py-2.5 ${c.isInternal ? 'bg-amber-500/5 border border-amber-500/10' : 'bg-[#1a2e42]'}`}>
+                      <p className="text-sm text-slate-300 leading-relaxed">{c.content}</p>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
-            <div className="px-5 pb-5">
-              <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} rows={3}
+
+            {/* Form commento */}
+            <div className="px-5 pb-5 border-t border-[#1e3348] pt-4">
+              <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                rows={3}
                 placeholder="Scrivi un commento..."
-                className="w-full bg-[#1a2e42] border border-[#2d4060] rounded-xl px-4 py-3 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#7ccad5]/40 focus:border-[#7ccad5]/50 resize-none transition-colors" />
-              <div className="flex items-center justify-between mt-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={isInternal} onChange={(e) => setIsInternal(e.target.checked)} className="rounded border-[#2d4060] bg-[#1a2e42] text-[#7ccad5]" />
-                  <span className="text-xs text-slate-400">Nota interna</span>
+                className="w-full bg-[#0b1622] border border-[#2d4060] rounded-xl px-4 py-3 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#7ccad5]/25 focus:border-[#7ccad5]/50 resize-none transition-all"
+              />
+              <div className="flex items-center justify-between mt-2.5">
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <div
+                    onClick={() => setIsInternal((v) => !v)}
+                    className={`w-8 h-4.5 rounded-full transition-colors relative cursor-pointer ${isInternal ? 'bg-amber-500' : 'bg-[#1a2e42] border border-[#2d4060]'}`}
+                  >
+                    <span className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-all ${isInternal ? 'left-4' : 'left-0.5'}`} />
+                  </div>
+                  <span className="text-xs text-slate-500 group-hover:text-slate-400 transition-colors select-none">Nota interna</span>
                 </label>
-                <button onClick={handleAddComment} disabled={!newComment.trim() || submitting}
-                  className="px-4 py-1.5 bg-[#7ccad5] text-[#0b1622] text-xs font-semibold rounded-lg hover:bg-[#5ab5c2] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                <button
+                  onClick={handleAddComment}
+                  disabled={!newComment.trim() || submitting}
+                  className="flex items-center gap-2 px-4 py-1.5 bg-[#7ccad5] text-[#0b1622] text-xs font-bold rounded-lg hover:bg-[#5ab5c2] disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95"
+                >
+                  {submitting ? (
+                    <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                  )}
                   {submitting ? 'Invio...' : 'Invia'}
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="bg-[#111f30] border border-[#2d4060] rounded-xl p-5">
-            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-3 flex items-center gap-2">
-              <span className="text-[#7ccad5]">✦</span> Assistente AI
-            </h2>
+          {/* AI */}
+          <div className="bg-[#0f1e2f] border border-[#1e3348] rounded-2xl p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-5 h-5 rounded-md bg-[#7ccad5]/15 flex items-center justify-center">
+                <span className="text-[#7ccad5] text-xs leading-none">✦</span>
+              </div>
+              <h2 className="text-sm font-semibold text-white">Assistente AI</h2>
+              <span className="text-[10px] text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded-full font-medium ml-auto">Attivo</span>
+            </div>
+
             <div className="flex flex-wrap gap-2">
               {[
-                { type: 'reply' as const, label: 'Genera Risposta' },
-                { type: 'classify' as const, label: 'Classifica Ticket' },
-                { type: 'summary' as const, label: 'Genera Riassunto' },
+                { type: 'reply' as const, label: 'Genera Risposta', icon: '✉' },
+                { type: 'classify' as const, label: 'Classifica', icon: '🏷' },
+                { type: 'summary' as const, label: 'Riassumi', icon: '📝' },
               ].map((btn) => (
-                <button key={btn.type} onClick={() => runAi(btn.type)} disabled={!!aiLoading}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-[#7ccad5]/10 border border-[#7ccad5]/25 text-[#7ccad5] text-xs font-medium rounded-lg hover:bg-[#7ccad5]/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                <button
+                  key={btn.type}
+                  onClick={() => runAi(btn.type)}
+                  disabled={!!aiLoading}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-[#7ccad5]/8 border border-[#7ccad5]/20 text-[#7ccad5] text-xs font-medium rounded-lg hover:bg-[#7ccad5]/15 hover:border-[#7ccad5]/35 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                >
                   {aiLoading === btn.type ? (
-                    <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>
+                    <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
                   ) : (
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    <span className="text-xs">{btn.icon}</span>
                   )}
                   {btn.label}
                 </button>
               ))}
             </div>
-            {aiResult && <AiResultBox title={aiResult.type} content={aiResult.content} onClose={() => setAiResult(null)} />}
+
+            {aiResult && (
+              <AiResultBox title={aiResult.type} content={aiResult.content} onClose={() => setAiResult(null)} />
+            )}
           </div>
         </div>
 
+        {/* Sidebar destra */}
         <div className="space-y-4">
-          <div className="bg-[#111f30] border border-[#2d4060] rounded-xl p-5 space-y-4">
+
+          {/* Stato & Priorità */}
+          <div className="bg-[#0f1e2f] border border-[#1e3348] rounded-2xl p-5 space-y-5">
             <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Stato</p>
-              <select value={ticket.status} onChange={(e) => handleStatusChange(e.target.value as TicketStatus)}
-                className="w-full bg-[#1a2e42] border border-[#2d4060] rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#7ccad5]/40 focus:border-[#7ccad5]/50">
+              <SectionTitle>Stato Ticket</SectionTitle>
+              <select
+                value={ticket.status}
+                onChange={(e) => handleStatusChange(e.target.value as TicketStatus)}
+                className="w-full bg-[#0b1622] border border-[#2d4060] rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#7ccad5]/25 focus:border-[#7ccad5]/50 transition-all"
+              >
                 {statusOptions.map((s) => <option key={s} value={s}>{statusLabels[s]}</option>)}
               </select>
             </div>
+
             <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Priorità</p>
+              <SectionTitle>Priorità</SectionTitle>
               <PriorityBadge priority={ticket.priority} />
             </div>
+
             <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Categoria</p>
+              <SectionTitle>Categoria</SectionTitle>
               <span className="text-sm text-slate-300 capitalize">{ticket.category}</span>
             </div>
           </div>
 
-          <div className="bg-[#111f30] border border-[#2d4060] rounded-xl p-5 space-y-3">
-            <p className="text-xs text-slate-500 uppercase tracking-wide">Persone</p>
+          {/* Persone */}
+          <div className="bg-[#0f1e2f] border border-[#1e3348] rounded-2xl p-5 space-y-4">
+            <SectionTitle>Persone</SectionTitle>
+
             <div>
-              <p className="text-xs text-slate-500 mb-1">Creato da</p>
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-[#e7c6ff]/15 flex items-center justify-center text-[#e7c6ff] text-xs font-bold">{ticket.createdBy.name.charAt(0)}</div>
-                <span className="text-sm text-slate-300">{ticket.createdBy.name}</span>
+              <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-2">Creato da</p>
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-full bg-[#e7c6ff]/12 border border-[#e7c6ff]/15 flex items-center justify-center text-[#e7c6ff] text-xs font-bold">
+                  {ticket.createdBy.name.charAt(0)}
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-slate-300">{ticket.createdBy.name}</p>
+                  <p className="text-[10px] text-slate-600 capitalize">{ticket.createdBy.role}</p>
+                </div>
               </div>
             </div>
+
             {ticket.assignedTo && (
               <div>
-                <p className="text-xs text-slate-500 mb-1">Assegnato a</p>
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-[#7ccad5]/15 flex items-center justify-center text-[#7ccad5] text-xs font-bold">{ticket.assignedTo.name.charAt(0)}</div>
-                  <span className="text-sm text-slate-300">{ticket.assignedTo.name}</span>
+                <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-2">Assegnato a</p>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-full bg-[#7ccad5]/12 border border-[#7ccad5]/15 flex items-center justify-center text-[#7ccad5] text-xs font-bold">
+                    {ticket.assignedTo.name.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-slate-300">{ticket.assignedTo.name}</p>
+                    <p className="text-[10px] text-slate-600 capitalize">{ticket.assignedTo.role}</p>
+                  </div>
                 </div>
               </div>
             )}
           </div>
 
-          <div className="bg-[#111f30] border border-[#2d4060] rounded-xl p-5 space-y-2">
-            <p className="text-xs text-slate-500 uppercase tracking-wide mb-3">Date</p>
-            <div className="flex justify-between text-xs">
-              <span className="text-slate-500">Creato</span>
-              <span className="text-slate-300">{formatDateTime(ticket.createdAt)}</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-slate-500">Aggiornato</span>
-              <span className="text-slate-300">{formatDateTime(ticket.updatedAt)}</span>
+          {/* Date */}
+          <div className="bg-[#0f1e2f] border border-[#1e3348] rounded-2xl p-5 space-y-3">
+            <SectionTitle>Date</SectionTitle>
+            <div className="space-y-2.5">
+              <div className="flex justify-between">
+                <span className="text-xs text-slate-600">Creato</span>
+                <span className="text-xs text-slate-400">{formatDateTime(ticket.createdAt)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-xs text-slate-600">Aggiornato</span>
+                <span className="text-xs text-slate-400">{formatDateTime(ticket.updatedAt)}</span>
+              </div>
             </div>
           </div>
         </div>
