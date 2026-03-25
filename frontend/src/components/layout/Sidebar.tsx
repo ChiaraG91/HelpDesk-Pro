@@ -125,11 +125,11 @@ const Sidebar = ({ open, onClose }: SidebarProps) => {
         <div className="border-t border-[#1e3348] p-3 shrink-0 space-y-1">
           {user && (
             <div className="flex items-center gap-3 px-3 py-2 rounded-lg">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#e7c6ff]/30 to-[#e7c6ff]/10 border border-[#e7c6ff]/25 flex items-center justify-center text-[#e7c6ff] text-xs font-bold shrink-0">
-                {user.name.charAt(0)}
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#e7c6ff]/30 to-[#e7c6ff]/10 border border-[#e7c6ff]/25 flex items-center justify-center text-[#e7c6ff] text-xs font-bold shrink-0 uppercase">
+                {(user.name || user.username || 'U').charAt(0)}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold text-slate-300 truncate">{user.name}</p>
+                <p className="text-xs font-semibold text-slate-300 truncate">{user.name || user.username}</p>
                 <p className="text-[10px] text-slate-600 truncate capitalize">{user.role}</p>
               </div>
             </div>

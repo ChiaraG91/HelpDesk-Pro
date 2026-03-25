@@ -4,7 +4,8 @@ export type UserRole = 'admin' | 'agent' | 'customer'
 
 export interface User {
   id: string
-  name: string
+  username: string
+  name?: string
   email: string
   role: UserRole
   avatar?: string
@@ -34,7 +35,7 @@ export interface Comment {
 }
 
 export interface LoginCredentials {
-  email: string
+  username: string
   password: string
 }
 

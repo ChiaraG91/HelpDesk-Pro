@@ -33,12 +33,12 @@ const CommentList = ({ comments, loading }: CommentListProps) => {
     <div className="space-y-4">
       {comments.map((comment) => (
         <div key={comment.id} className="flex gap-3">
-          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-bold shrink-0">
-            {comment.author.name.charAt(0).toUpperCase()}
+          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-bold shrink-0 uppercase">
+            {(comment.author.name || comment.author.username || 'U').charAt(0)}
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm font-medium text-gray-800">{comment.author.name}</span>
+              <span className="text-sm font-medium text-gray-800">{comment.author.name || comment.author.username}</span>
               {comment.isInternal && (
                 <span className="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded">
                   Interno

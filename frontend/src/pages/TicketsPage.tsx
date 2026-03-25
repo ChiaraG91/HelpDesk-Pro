@@ -4,28 +4,35 @@ import { StatusBadge, PriorityBadge } from '@/components/common'
 import { formatDate } from '@/utils/formatDate'
 import type { TicketStatus, TicketPriority } from '@/types'
 import { useTickets } from '@/context/TicketContext'
+import { useAuthContext } from '@/context/AuthContext'
 
 const TicketsPage = () => {
   const navigate = useNavigate()
   const { tickets } = useTickets()
+  const { user } = useAuthContext()
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState<TicketStatus | ''>('')
   const [filterPriority, setFilterPriority] = useState<TicketPriority | ''>('')
   const [filterCategory, setFilterCategory] = useState('')
+  const [filterAssignedToMe, setFilterAssignedToMe] = useState(false)
+
+  const isOperator = user?.role?.toLowerCase() === 'operator'
+  const canCreate = user?.role?.toLowerCase() !== 'operator'
 
   const filtered = useMemo(() => {
     return tickets.filter((t) => {
       if (filterStatus && t.status !== filterStatus) return false
       if (filterPriority && t.priority !== filterPriority) return false
       if (filterCategory && t.category !== filterCategory) return false
+      if (filterAssignedToMe && String(t.assignedTo?.id) !== String(user?.id)) return false
       if (search && !t.title.toLowerCase().includes(search.toLowerCase()) && !t.description.toLowerCase().includes(search.toLowerCase())) return false
       return true
     })
-  }, [tickets, search, filterStatus, filterPriority, filterCategory])
+  }, [tickets, search, filterStatus, filterPriority, filterCategory, filterAssignedToMe, user])
 
   const selectCls = "bg-[#1a2e42] border border-[#2d4060] rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#7ccad5]/40 focus:border-[#7ccad5]/50 transition-colors w-full sm:w-auto"
 
-  const hasFilters = !!(filterStatus || filterPriority || filterCategory || search)
+  const hasFilters = !!(filterStatus || filterPriority || filterCategory || search || filterAssignedToMe)
 
   return (
     <div className="space-y-5">
@@ -34,15 +41,17 @@ const TicketsPage = () => {
           <h1 className="text-xl sm:text-2xl font-bold text-white">Ticket</h1>
           <p className="text-slate-400 text-sm mt-1">{filtered.length} risultati trovati</p>
         </div>
-        <button
-          onClick={() => navigate('/tickets/new')}
-          className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-[#7ccad5] text-[#0b1622] text-sm font-semibold rounded-lg hover:bg-[#5ab5c2] transition-colors shrink-0"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          <span className="hidden sm:inline">Nuovo</span>
-        </button>
+        {canCreate && (
+          <button
+            onClick={() => navigate('/tickets/new')}
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-[#7ccad5] text-[#0b1622] text-sm font-semibold rounded-lg hover:bg-[#5ab5c2] transition-colors shrink-0"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span className="hidden sm:inline">Nuovo</span>
+          </button>
+        )}
       </div>
 
       {/* Filtri */}
@@ -81,14 +90,27 @@ const TicketsPage = () => {
               <option value="general">Generale</option>
             </select>
           </div>
-          {hasFilters && (
-            <button
-              onClick={() => { setSearch(''); setFilterStatus(''); setFilterPriority(''); setFilterCategory('') }}
-              className="text-xs text-slate-400 hover:text-[#7ccad5] transition-colors self-center sm:self-auto"
-            >
-              Azzera filtri
-            </button>
-          )}
+          <div className="flex items-center gap-4 w-full sm:w-auto mt-2 sm:mt-0">
+            {isOperator && (
+              <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={filterAssignedToMe}
+                  onChange={(e) => setFilterAssignedToMe(e.target.checked)}
+                  className="rounded border-[#2d4060] bg-[#1a2e42] text-[#7ccad5] focus:ring-[#7ccad5]/40"
+                />
+                Solo assegnati a me
+              </label>
+            )}
+            {hasFilters && (
+              <button
+                onClick={() => { setSearch(''); setFilterStatus(''); setFilterPriority(''); setFilterCategory(''); setFilterAssignedToMe(false) }}
+                className="text-xs text-slate-400 hover:text-[#7ccad5] transition-colors self-center sm:self-auto shrink-0"
+              >
+                Azzera filtri
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
