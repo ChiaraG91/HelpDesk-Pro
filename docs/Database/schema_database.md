@@ -67,15 +67,22 @@ erDiagram
 
 🧠 Descrizione
 User → gestisce autenticazione e ruoli (cliente, operatore, admin)
+
 Ticket → entità principale del sistema
+
 Category → classificazione dei ticket
+
 Comment → conversazione tra utenti
+
 TicketAssignment → assegnazione operatori
+
 TicketHistory → tracciamento modifiche stato
 
 🔥 Note progettuali
 Separazione assignment → maggiore flessibilità
+
 Tabella history → audit completo
+
 Struttura modulare → facile estensione
 
 
