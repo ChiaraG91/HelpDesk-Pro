@@ -25,6 +25,13 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ["id", "username", "email", "role", "is_staff", "password"]
         
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        # Forza il ruolo ADMIN se è un superuser di sistema per far matchare React
+        if instance.is_superuser or instance.is_staff:
+            rep['role'] = 'ADMIN'
+        return rep
+        
     def create(self, validated_data):
         password = validated_data.pop('password', None)
         user = super().create(validated_data)

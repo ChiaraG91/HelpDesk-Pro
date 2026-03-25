@@ -154,10 +154,12 @@ SIMPLE_JWT = {
 # ----------------------------
 # CORS CONFIGURATION
 # ----------------------------
-# Opzione sviluppo locale: React su localhost:3000
+# Opzione sviluppo locale: React su localhost:3000 e 5173
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
 ]
 
 # Per sviluppo rapido, meno sicuro:

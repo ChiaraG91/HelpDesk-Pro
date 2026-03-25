@@ -5,7 +5,10 @@ import { StatusBadge, PriorityBadge } from '@/components/common'
 import { formatDateTime, formatRelative } from '@/utils/formatDate'
 import { useToast } from '@/context/ToastContext'
 import { useTickets } from '@/context/TicketContext'
-import type { Ticket, Comment, TicketStatus } from '@/types'
+import { useAuthContext } from '@/context/AuthContext'
+import { commentService } from '@/services/commentService'
+import { aiService } from '@/services/aiService'
+import type { Ticket, Comment, TicketStatus, User } from '@/types'
 
 const SectionTitle = ({ children }: { children: React.ReactNode }) => (
   <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -34,6 +37,7 @@ const TicketDetailPage = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { user } = useAuthContext()
   const { getTicketById, updateStatus } = useTickets()
 
   const [ticket, setTicket] = useState<Ticket | null>(null)
@@ -43,12 +47,32 @@ const TicketDetailPage = () => {
   const [submitting, setSubmitting] = useState(false)
   const [aiLoading, setAiLoading] = useState<string | null>(null)
   const [aiResult, setAiResult] = useState<{ type: string; content: string } | null>(null)
+  const [operators, setOperators] = useState<User[]>([])
+
+  const isOperator = user?.role?.toLowerCase() === 'operator'
+  const isAdmin = user?.role?.toLowerCase() === 'admin'
+  const canAssign = isOperator || isAdmin
+
+  useEffect(() => {
+    if (isAdmin) {
+      import('@/services/userService').then(({ userService }) => {
+        userService.getAll()
+          .then(res => setOperators((res as any).results || res.data || res))
+          .catch(err => console.error("Errore recupero operatori:", err))
+      })
+    } else if (isOperator && user) {
+      setOperators([user])
+    }
+  }, [isAdmin, isOperator, user])
 
   useEffect(() => {
     const found = id ? getTicketById(id) : undefined
     if (found) {
       setTicket(found)
-      setComments(found.comments ?? [])
+      // Recupera i commenti reali dal database
+      commentService.getByTicket(found.id)
+        .then(data => setComments(data))
+        .catch(err => console.error("Errore recupero commenti:", err))
     }
   }, [id, getTicketById])
 
@@ -59,38 +83,56 @@ const TicketDetailPage = () => {
     toast.success('Stato aggiornato')
   }
 
-  const handleAddComment = async () => {
-    if (!newComment.trim()) return
-    setSubmitting(true)
-    await new Promise((r) => setTimeout(r, 600))
-    const comment: Comment = {
-      id: `c${Date.now()}`,
-      content: newComment.trim(),
-      author: { id: 'u1', name: 'Marco Rossi', email: 'admin@helpdesk.it', role: 'admin', createdAt: '' },
-      createdAt: new Date().toISOString(),
-      isInternal,
+  const handleAssign = async (userId: string) => {
+    if (!ticket) return
+    try {
+      await import('@/services/ticketService').then(({ ticketService }) => ticketService.assign(ticket.id, userId || null))
+      const op = operators.find(o => String(o.id) === userId)
+      setTicket({ ...ticket, assignedTo: op || undefined })
+      toast.success('Ticket assegnato con successo!')
+    } catch {
+      toast.error("Errore nell'assegnazione")
     }
-    setComments((prev) => [...prev, comment])
-    setNewComment('')
-    setIsInternal(false)
-    setSubmitting(false)
-    toast.success('Commento aggiunto')
   }
 
-  const runAi = async (type: 'reply' | 'classify' | 'summary') => {
+  const handleAddComment = async () => {
+    if (!newComment.trim() || !ticket) return
+    setSubmitting(true)
+    try {
+      const savedComment = await commentService.create(ticket.id, newComment.trim(), isInternal)
+      setComments((prev) => [...prev, savedComment])
+      setNewComment('')
+      setIsInternal(false)
+      toast.success('Commento aggiunto')
+    } catch (e) {
+      toast.error('Errore durante il salvataggio del commento')
+      console.error(e)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const runAi = async (type: 'reply' | 'classify' | 'duplicate') => {
     if (!ticket) return
     setAiLoading(type)
     setAiResult(null)
-    await new Promise((r) => setTimeout(r, 1200))
-    if (type === 'reply') {
-      setAiResult({ type: 'Risposta Suggerita', content: mockAiReplies[ticket.category] ?? mockAiReplies['general'] })
-    } else if (type === 'classify') {
-      const { category, priority } = mockAiClassify(ticket.title)
-      setAiResult({ type: 'Classificazione AI', content: `Categoria: ${category}\nPriorità: ${priority}\nAffidabilità: 87%` })
-    } else {
-      setAiResult({ type: 'Riassunto', content: mockAiSummary(ticket) })
+    try {
+      if (type === 'reply') {
+        const res = await aiService.suggestReply(ticket.id)
+        setAiResult({ type: 'Risposta Suggerita', content: res.generated_reply })
+      } else if (type === 'classify') {
+        const res = await aiService.classifyTicket(ticket.id)
+        setAiResult({ type: 'Classificazione AI', content: `Categoria: ${res.category}\nPriorità: ${res.priority}\nAffidabilità: ${res.confidence}%` })
+      } else {
+        const res = await aiService.checkDuplicate(ticket.id)
+        setAiResult({ type: 'Controllo Duplicati', content: res.is_duplicate ? `Possibile duplicato:\n${res.matching_ticket || res.message}\n(Affidabilità: ${res.confidence}%)` : (res.message || 'Nessun duplicato rilevato.') })
+      }
+    } catch (e) {
+      toast.error("Errore durante l'elaborazione AI")
+      console.error(e)
+    } finally {
+      setAiLoading(null)
     }
-    setAiLoading(null)
   }
 
   if (!ticket) return (
@@ -102,8 +144,19 @@ const TicketDetailPage = () => {
     </div>
   )
 
-  const statusOptions: TicketStatus[] = ['open', 'in_progress', 'resolved', 'closed']
   const statusLabels: Record<TicketStatus, string> = { open: 'Aperto', in_progress: 'In Lavorazione', resolved: 'Risolto', closed: 'Chiuso' }
+
+  const getAvailableStatuses = (current: TicketStatus): TicketStatus[] => {
+    switch (current) {
+      case 'open': return ['open', 'in_progress', 'closed'];
+      case 'in_progress': return ['in_progress', 'resolved', 'closed'];
+      case 'resolved': return ['resolved', 'closed', 'open'];
+      case 'closed': return ['closed', 'open'];
+      default: return [current];
+    }
+  }
+
+  const availableStatuses = getAvailableStatuses(ticket.status)
 
   return (
     <div className="max-w-5xl mx-auto animate-fade-in">
@@ -158,12 +211,12 @@ const TicketDetailPage = () => {
               )}
               {comments.map((c) => (
                 <div key={c.id} className="flex gap-3">
-                  <div className="w-7 h-7 rounded-full bg-[#e7c6ff]/12 border border-[#e7c6ff]/15 flex items-center justify-center text-[#e7c6ff] text-xs font-bold shrink-0 mt-0.5">
-                    {c.author.name.charAt(0)}
+                  <div className="w-7 h-7 rounded-full bg-[#e7c6ff]/12 border border-[#e7c6ff]/15 flex items-center justify-center text-[#e7c6ff] text-xs font-bold shrink-0 mt-0.5 uppercase">
+                    {(c.author.name || c.author.username || 'U').charAt(0)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                      <span className="text-xs font-semibold text-slate-300">{c.author.name}</span>
+                      <span className="text-xs font-semibold text-slate-300">{c.author.name || c.author.username}</span>
                       {c.isInternal && (
                         <span className="text-[10px] bg-amber-500/12 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/20 font-medium">Interno</span>
                       )}
@@ -218,44 +271,46 @@ const TicketDetailPage = () => {
           </div>
 
           {/* AI */}
-          <div className="bg-[#0f1e2f] border border-[#1e3348] rounded-2xl p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-5 h-5 rounded-md bg-[#7ccad5]/15 flex items-center justify-center">
-                <span className="text-[#7ccad5] text-xs leading-none">✦</span>
+          {user?.role?.toLowerCase() !== 'client' && (
+            <div className="bg-[#0f1e2f] border border-[#1e3348] rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-5 h-5 rounded-md bg-[#7ccad5]/15 flex items-center justify-center">
+                  <span className="text-[#7ccad5] text-xs leading-none">✦</span>
+                </div>
+                <h2 className="text-sm font-semibold text-white">Assistente AI</h2>
+                <span className="text-[10px] text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded-full font-medium ml-auto">Attivo</span>
               </div>
-              <h2 className="text-sm font-semibold text-white">Assistente AI</h2>
-              <span className="text-[10px] text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded-full font-medium ml-auto">Attivo</span>
+  
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { type: 'reply' as const, label: 'Genera Risposta', icon: '✉' },
+                  { type: 'classify' as const, label: 'Classifica', icon: '🏷' },
+                  { type: 'duplicate' as const, label: 'Cerca Duplicati', icon: '🔍' },
+                ].map((btn) => (
+                  <button
+                    key={btn.type}
+                    onClick={() => runAi(btn.type)}
+                    disabled={!!aiLoading}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-[#7ccad5]/8 border border-[#7ccad5]/20 text-[#7ccad5] text-xs font-medium rounded-lg hover:bg-[#7ccad5]/15 hover:border-[#7ccad5]/35 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  >
+                    {aiLoading === btn.type ? (
+                      <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                      </svg>
+                    ) : (
+                      <span className="text-xs">{btn.icon}</span>
+                    )}
+                    {btn.label}
+                  </button>
+                ))}
+              </div>
+  
+              {aiResult && (
+                <AiResultBox title={aiResult.type} content={aiResult.content} onClose={() => setAiResult(null)} />
+              )}
             </div>
-
-            <div className="flex flex-wrap gap-2">
-              {[
-                { type: 'reply' as const, label: 'Genera Risposta', icon: '✉' },
-                { type: 'classify' as const, label: 'Classifica', icon: '🏷' },
-                { type: 'summary' as const, label: 'Riassumi', icon: '📝' },
-              ].map((btn) => (
-                <button
-                  key={btn.type}
-                  onClick={() => runAi(btn.type)}
-                  disabled={!!aiLoading}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-[#7ccad5]/8 border border-[#7ccad5]/20 text-[#7ccad5] text-xs font-medium rounded-lg hover:bg-[#7ccad5]/15 hover:border-[#7ccad5]/35 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                >
-                  {aiLoading === btn.type ? (
-                    <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                    </svg>
-                  ) : (
-                    <span className="text-xs">{btn.icon}</span>
-                  )}
-                  {btn.label}
-                </button>
-              ))}
-            </div>
-
-            {aiResult && (
-              <AiResultBox title={aiResult.type} content={aiResult.content} onClose={() => setAiResult(null)} />
-            )}
-          </div>
+          )}
         </div>
 
         {/* Sidebar destra */}
@@ -265,13 +320,19 @@ const TicketDetailPage = () => {
           <div className="bg-[#0f1e2f] border border-[#1e3348] rounded-2xl p-5 space-y-5">
             <div>
               <SectionTitle>Stato Ticket</SectionTitle>
-              <select
-                value={ticket.status}
-                onChange={(e) => handleStatusChange(e.target.value as TicketStatus)}
-                className="w-full bg-[#0b1622] border border-[#2d4060] rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#7ccad5]/25 focus:border-[#7ccad5]/50 transition-all"
-              >
-                {statusOptions.map((s) => <option key={s} value={s}>{statusLabels[s]}</option>)}
-              </select>
+              {user?.role?.toLowerCase() === 'client' ? (
+                <div className="mt-1">
+                  <StatusBadge status={ticket.status} />
+                </div>
+              ) : (
+                <select
+                  value={ticket.status}
+                  onChange={(e) => handleStatusChange(e.target.value as TicketStatus)}
+                  className="w-full bg-[#0b1622] border border-[#2d4060] rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#7ccad5]/25 focus:border-[#7ccad5]/50 transition-all"
+                >
+                  {availableStatuses.map((s) => <option key={s} value={s}>{statusLabels[s]}</option>)}
+                </select>
+              )}
             </div>
 
             <div>
@@ -292,30 +353,46 @@ const TicketDetailPage = () => {
             <div>
               <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-2">Creato da</p>
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-full bg-[#e7c6ff]/12 border border-[#e7c6ff]/15 flex items-center justify-center text-[#e7c6ff] text-xs font-bold">
-                  {ticket.createdBy.name.charAt(0)}
+                <div className="w-7 h-7 rounded-full bg-[#e7c6ff]/12 border border-[#e7c6ff]/15 flex items-center justify-center text-[#e7c6ff] text-xs font-bold uppercase">
+                  {(ticket.createdBy.name || ticket.createdBy.username || 'U').charAt(0)}
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-slate-300">{ticket.createdBy.name}</p>
+                  <p className="text-xs font-medium text-slate-300">{ticket.createdBy.name || ticket.createdBy.username}</p>
                   <p className="text-[10px] text-slate-600 capitalize">{ticket.createdBy.role}</p>
                 </div>
               </div>
             </div>
 
-            {ticket.assignedTo && (
+            {canAssign ? (
+              <div>
+                <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-2">Assegnato a</p>
+                <select
+                  value={ticket.assignedTo?.id || ''}
+                  onChange={(e) => handleAssign(e.target.value)}
+                  className="w-full bg-[#0b1622] border border-[#2d4060] rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#7ccad5]/25 focus:border-[#7ccad5]/50 transition-all"
+                >
+                  <option value="">Nessuno</option>
+                  {operators.map((op) => (
+                    <option key={op.id} value={op.id}>
+                      {op.name || op.username}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : ticket.assignedTo ? (
               <div>
                 <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-2">Assegnato a</p>
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-full bg-[#7ccad5]/12 border border-[#7ccad5]/15 flex items-center justify-center text-[#7ccad5] text-xs font-bold">
-                    {ticket.assignedTo.name.charAt(0)}
+                  <div className="w-7 h-7 rounded-full bg-[#7ccad5]/12 border border-[#7ccad5]/15 flex items-center justify-center text-[#7ccad5] text-xs font-bold uppercase">
+                    {(ticket.assignedTo.name || ticket.assignedTo.username || 'U').charAt(0)}
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-slate-300">{ticket.assignedTo.name}</p>
+                    <p className="text-xs font-medium text-slate-300">{ticket.assignedTo.name || ticket.assignedTo.username}</p>
                     <p className="text-[10px] text-slate-600 capitalize">{ticket.assignedTo.role}</p>
                   </div>
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
 
           {/* Date */}

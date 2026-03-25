@@ -3,9 +3,8 @@ import type { AuthResponse, LoginCredentials, User } from '@/types'
 
 export const authService = {
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    const { data } = await apiClient.post<AuthResponse>('/auth/login', credentials)
-    localStorage.setItem('token', data.token)
-    localStorage.setItem('user', JSON.stringify(data.user))
+    const { data } = await apiClient.post<any>('/auth/login/', credentials)
+    localStorage.setItem('token', data.access)
     return data
   },
 
@@ -15,7 +14,7 @@ export const authService = {
   },
 
   getMe: async (): Promise<User> => {
-    const { data } = await apiClient.get<User>('/auth/me')
+    const { data } = await apiClient.get<User>('/users/me/')
     return data
   },
 

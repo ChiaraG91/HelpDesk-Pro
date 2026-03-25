@@ -5,7 +5,7 @@ import { useAuthContext } from '@/context/AuthContext'
 const LoginPage = () => {
   const { login } = useAuthContext()
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -13,10 +13,10 @@ const LoginPage = () => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!email || !password) { setError('Compila tutti i campi'); return }
+    if (!username || !password) { setError('Compila tutti i campi'); return }
     setLoading(true)
     setError('')
-    const ok = await login(email, password)
+    const ok = await login(username, password)
     if (ok) {
       navigate('/dashboard')
     } else {
@@ -113,16 +113,16 @@ const LoginPage = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Email</label>
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Username</label>
               <div className="relative">
                 <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@helpdesk.it"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="admin"
                   className={`${inputCls} pl-10`}
                 />
               </div>
@@ -183,13 +183,7 @@ const LoginPage = () => {
             </button>
           </form>
 
-          <div className="mt-6 p-4 rounded-xl bg-[#111f30] border border-[#2d4060]">
-            <p className="text-xs text-slate-500 mb-2 font-medium">Credenziali demo</p>
-            <div className="space-y-1">
-              <p className="text-xs text-slate-400">Email: <span className="text-[#7ccad5] font-mono">admin@helpdesk.it</span></p>
-              <p className="text-xs text-slate-400">Password: <span className="text-[#7ccad5] font-mono">admin123</span></p>
-            </div>
-          </div>
+          {/* Banner credenziali demo rimosso */}
         </div>
       </div>
     </div>

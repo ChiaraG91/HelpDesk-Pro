@@ -37,7 +37,7 @@ const DashboardPage = () => {
   const stats = useMemo(() => ({
     open: tickets.filter((t) => t.status === 'open').length,
     in_progress: tickets.filter((t) => t.status === 'in_progress').length,
-    resolved: tickets.filter((t) => t.status === 'resolved').length,
+    resolved: tickets.filter((t) => t.status === 'resolved' || t.status === 'closed').length,
     closed: tickets.filter((t) => t.status === 'closed').length,
     total: tickets.length,
   }), [tickets])
@@ -60,7 +60,7 @@ const DashboardPage = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white">Buongiorno, {user?.name?.split(' ')[0]} 👋</h1>
+          <h1 className="text-xl font-bold text-white">Buongiorno, {user?.name ? user.name.split(' ')[0] : user?.username} 👋</h1>
           <p className="text-slate-500 text-sm mt-0.5">Ecco una panoramica del sistema di supporto</p>
         </div>
         <button

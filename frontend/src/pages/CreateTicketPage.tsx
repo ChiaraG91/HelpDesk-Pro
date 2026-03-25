@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react'
+import { useState, FormEvent, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '@/context/ToastContext'
 import { useTickets } from '@/context/TicketContext'
@@ -49,10 +49,23 @@ const CreateTicketPage = () => {
     const errs = validate()
     if (Object.keys(errs).length > 0) { setErrors(errs); return }
     setLoading(true)
-    await new Promise((r) => setTimeout(r, 700))
-    addTicket({ title: form.title, description: form.description, category: form.category, priority: form.priority })
-    toast.success('Ticket creato con successo!')
-    navigate('/tickets')
+    try {
+      // NON INVIO la categoria per evitare il ValidationError in Django, 
+      // poichè queste Categorie fittizie non esistono sul suo DB
+      const payloadToSend = {
+          title: form.title,
+          description: form.description,
+          priority: form.priority
+      }
+      await addTicket(payloadToSend as any)
+      toast.success('Ticket creato con successo!')
+      navigate('/tickets')
+    } catch (err) {
+      toast.error('Errore durante la creazione del ticket')
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const inputCls = (err?: string) =>

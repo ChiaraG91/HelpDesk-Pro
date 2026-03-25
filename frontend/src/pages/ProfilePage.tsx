@@ -29,13 +29,13 @@ const ProfilePage = () => {
       <div className="bg-[#0f1e2f] border border-[#1e3348] rounded-2xl p-6">
         <div className="flex items-center gap-5">
           <div className="relative shrink-0">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#e7c6ff]/20 to-[#e7c6ff]/5 border border-[#e7c6ff]/20 flex items-center justify-center text-[#e7c6ff] text-2xl font-bold">
-              {user?.name.charAt(0)}
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#e7c6ff]/20 to-[#e7c6ff]/5 border border-[#e7c6ff]/20 flex items-center justify-center text-[#e7c6ff] text-2xl font-bold uppercase">
+              {(user?.name || user?.username || 'U').charAt(0)}
             </div>
             <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-400 rounded-full border-2 border-[#0b1622]" />
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-lg font-bold text-white">{user?.name}</h2>
+            <h2 className="text-lg font-bold text-white">{user?.name || user?.username}</h2>
             <p className="text-slate-500 text-sm">{user?.email}</p>
             <div className="flex items-center gap-2 mt-2">
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#7ccad5]/12 text-[#7ccad5] border border-[#7ccad5]/25">
@@ -69,7 +69,7 @@ const ProfilePage = () => {
         </div>
         <div className="divide-y divide-[#131f2e]">
           {[
-            { label: 'Nome completo', value: user?.name, icon: '👤' },
+            { label: 'Nome completo', value: user?.name || user?.username, icon: '👤' },
             { label: 'Email', value: user?.email, icon: '✉' },
             { label: 'Ruolo', value: ROLE_LABELS[user?.role ?? ''] ?? user?.role, icon: '🔑' },
             { label: 'Membro dal', value: user?.createdAt ? new Date(user.createdAt).toLocaleDateString('it-IT', { year: 'numeric', month: 'long', day: 'numeric' }) : '—', icon: '📅' },

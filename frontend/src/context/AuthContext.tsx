@@ -1,13 +1,11 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import type { User } from '@/types'
-
-const MOCK_CREDENTIALS = { email: 'admin@helpdesk.it', password: 'admin123' }
-const MOCK_USER: User = { id: 'u1', name: 'Marco Rossi', email: 'admin@helpdesk.it', role: 'admin', createdAt: '2024-01-10T08:00:00Z' }
+import { authService } from '@/services/authService'
 
 interface AuthContextType {
   user: User | null
   loading: boolean
-  login: (email: string, password: string) => Promise<boolean>
+  login: (username: string, password: string) => Promise<boolean>
   logout: () => void
   isAuthenticated: boolean
 }
@@ -19,23 +17,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const stored = sessionStorage.getItem('user')
-    if (stored) setUser(JSON.parse(stored) as User)
+    const stored = authService.getCurrentUser()
+    if (stored) setUser(stored)
     setLoading(false)
   }, [])
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    await new Promise((r) => setTimeout(r, 800))
-    if (email === MOCK_CREDENTIALS.email && password === MOCK_CREDENTIALS.password) {
-      sessionStorage.setItem('user', JSON.stringify(MOCK_USER))
-      setUser(MOCK_USER)
+  const login = async (username: string, password: string): Promise<boolean> => {
+    try {
+      await authService.login({ username, password })
+      const userData = await authService.getMe()
+      localStorage.setItem('user', JSON.stringify(userData))
+      setUser(userData)
       return true
+    } catch (e) {
+      console.error("Login failed: ", e)
+      return false
     }
-    return false
   }
 
   const logout = () => {
-    sessionStorage.removeItem('user')
+    authService.logout()
     setUser(null)
   }
 
