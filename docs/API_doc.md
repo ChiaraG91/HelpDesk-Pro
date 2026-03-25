@@ -232,6 +232,101 @@ Authorization: Bearer <your_token>
 
 ---
 
+# 🤖 AI API
+
+Endpoint dedicati alle funzionalità intelligenti del sistema.
+
+---
+
+## 📊 Classificazione Ticket
+
+Classifica automaticamente categoria e priorità.
+
+**POST** `/api/ai/classify-ticket/`
+
+### Request
+
+```json
+{
+  "title": "Login issue",
+  "description": "User cannot access account"
+}
+```
+
+### Response
+
+```json
+{
+  "category": "Authentication",
+  "priority": "high"
+}
+```
+
+---
+
+## ✍️ Suggerimento Risposta
+
+Genera una bozza di risposta per l’operatore.
+
+**POST** `/api/ai/suggest-reply/`
+
+### Request
+
+```json
+{
+  "ticket_id": 1
+}
+```
+
+oppure
+
+```json
+{
+  "ticket_text": "User cannot login...",
+  "comments": ["Have you tried resetting password?"]
+}
+```
+
+### Response
+
+```json
+{
+  "suggested_reply": "Please try resetting your password using the following link..."
+}
+```
+
+---
+
+## 🔍 Rilevamento Duplicati
+
+Individua ticket simili già esistenti.
+
+**POST** `/api/ai/detect-duplicates/`
+
+### Request
+
+```json
+{
+  "title": "Login problem",
+  "description": "Cannot login to dashboard"
+}
+```
+
+### Response
+
+```json
+{
+  "duplicates": [
+    {
+      "ticket_id": 12,
+      "similarity": 0.89
+    }
+  ]
+}
+```
+
+---
+
 # 🔍 Filtering & Search
 
 Supported on tickets endpoint:
@@ -269,6 +364,7 @@ Supported on tickets endpoint:
 * Django
 * Django REST Framework
 * JWT (SimpleJWT)
+* AI Integration (Gemini)
 
 ---
 
@@ -279,3 +375,4 @@ pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
 ```
+
