@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { mockTickets, mockAiReplies, mockAiClassify, mockAiSummary } from '@/data/mockData'
+import { mockAiReplies, mockAiClassify, mockAiSummary } from '@/data/mockData'
 import { PriorityBadge } from '@/components/common'
 import { formatDateTime, formatRelative } from '@/utils/formatDate'
 import { useToast } from '@/context/ToastContext'
+import { useTickets } from '@/context/TicketContext'
 import type { Ticket, Comment, TicketStatus } from '@/types'
 
 const AiResultBox = ({ title, content, onClose }: { title: string; content: string; onClose: () => void }) => (
@@ -22,6 +23,7 @@ const TicketDetailPage = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { getTicketById, updateStatus } = useTickets()
 
   const [ticket, setTicket] = useState<Ticket | null>(null)
   const [comments, setComments] = useState<Comment[]>([])
@@ -32,16 +34,17 @@ const TicketDetailPage = () => {
   const [aiResult, setAiResult] = useState<{ type: string; content: string } | null>(null)
 
   useEffect(() => {
-    const found = mockTickets.find((t) => t.id === id)
+    const found = id ? getTicketById(id) : undefined
     if (found) {
       setTicket(found)
       setComments(found.comments ?? [])
     }
-  }, [id])
+  }, [id, getTicketById])
 
   const handleStatusChange = (newStatus: TicketStatus) => {
     if (!ticket) return
     setTicket({ ...ticket, status: newStatus })
+    updateStatus(ticket.id, newStatus)
     toast.success(`Stato aggiornato: ${newStatus}`)
   }
 

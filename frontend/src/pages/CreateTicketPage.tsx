@@ -1,11 +1,13 @@
 import { useState, FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '@/context/ToastContext'
+import { useTickets } from '@/context/TicketContext'
 import type { TicketPriority } from '@/types'
 
 const CreateTicketPage = () => {
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { addTicket } = useTickets()
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({ title: '', description: '', category: '', priority: 'medium' as TicketPriority })
   const [errors, setErrors] = useState<Partial<typeof form>>({})
@@ -29,6 +31,7 @@ const CreateTicketPage = () => {
     if (Object.keys(e2).length > 0) { setErrors(e2); return }
     setLoading(true)
     await new Promise((r) => setTimeout(r, 800))
+    addTicket({ title: form.title, description: form.description, category: form.category, priority: form.priority })
     toast.success('Ticket creato con successo!')
     navigate('/tickets')
   }
