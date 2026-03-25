@@ -79,6 +79,7 @@ TicketAssignment → assegnazione operatori
 TicketHistory → tracciamento modifiche stato
 
 🔥 Note progettuali
+
 Separazione assignment → maggiore flessibilità
 
 Tabella history → audit completo
