@@ -27,8 +27,8 @@ class UserSerializer(serializers.ModelSerializer):
         
     def to_representation(self, instance):
         rep = super().to_representation(instance)
-        # Forza il ruolo ADMIN se è un superuser di sistema per far matchare React
-        if instance.is_superuser or instance.is_staff:
+        # Forza il ruolo ADMIN solo se è un superuser di sistema vero e proprio
+        if instance.is_superuser:
             rep['role'] = 'ADMIN'
         return rep
         
