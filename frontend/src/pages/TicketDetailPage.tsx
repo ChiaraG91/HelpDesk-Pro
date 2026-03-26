@@ -57,13 +57,21 @@ const TicketDetailPage = () => {
     if (isAdmin) {
       import('@/services/userService').then(({ userService }) => {
         userService.getAll()
-          .then(res => setOperators((res as any).results || res.data || res))
-          .catch(err => console.error("Errore recupero operatori:", err))
+          .then(res => {
+            const list = (res as any).results || res.data || res;
+            if (Array.isArray(list)) setOperators(list);
+            else if (user) setOperators([user]);
+          })
+          .catch(err => {
+            console.error("Errore recupero operatori:", err);
+            if (user) setOperators([user]);
+          })
       })
-    } else if (isOperator && user) {
-      setOperators([user])
+    } else if (user) {
+      // Qualsiasi altro ruolo (Operator, ecc) avrà almeno se stesso nella sua tendina
+      setOperators([user]);
     }
-  }, [isAdmin, isOperator, user])
+  }, [isAdmin, user])
 
   useEffect(() => {
     const found = id ? getTicketById(id) : undefined
